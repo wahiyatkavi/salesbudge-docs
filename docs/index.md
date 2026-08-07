@@ -15,5 +15,7 @@ Event-native operational intelligence for sales and marketing teams.
 | Surface | URL (production) |
 |---------|------------------|
 | Marketing site | https://salesbudge.com |
-| Merchant app | https://app.salesbudge.com · `https://{tenant}.salesbudge.com` |
+| Merchant auth (login / signup) | https://app.salesbudge.com |
+| Merchant CRM (tenant workspace) | https://{slug}.salesbudge.com |
 | API | https://api.salesbudge.com |
+| SDK (CDN) | https://cdn.salesbudge.com/sdk/customer-platform.min.js |

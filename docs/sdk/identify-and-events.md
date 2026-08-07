@@ -5,9 +5,13 @@ After the SDK loads:
 - **Anonymous browsing** — the SDK registers a device and records page/product events.
 - **Lead capture** — call `identify({ email, … })` on form submit, then track an intent event (e.g. demo request).
 
-Typical website flow: home → product views → contact form → lead appears in CRM **Sales**.
+Typical website flow: product/category views → contact form (`identify` + intent) → lead appears in CRM **Sales**.
+
+The SalesBudge marketing **home** page is intentionally silent: it may load the SDK for session continuity but does **not** emit product, category, or demo events. Track on catalog/product pages and on successful contact submit.
 
 Event names and payloads must match your merchant event catalog (defaults + custom events configured in the CRM).
+
+Contact forms should show success only after `identify()` and the intent event both succeed; surface API/network errors to the visitor instead of a false thank-you.
 
 ## Device, locale, and location
 
