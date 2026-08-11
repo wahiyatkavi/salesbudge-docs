@@ -30,6 +30,11 @@ Custom events validate `properties` keys against the catalog field list (max 15 
 
 `userAgent`, `locale`, `languages`, `timezone`, `platform`, `screenWidth`, `screenHeight`, `latitude`, `longitude`.
 
-Country is taken from edge headers (`CloudFront-Viewer-Country`, `CF-IPCountry`, …) when present and stored on the device and customer.
+Country is resolved in this order and stored on the device and customer:
+
+1. Edge headers when present (`CloudFront-Viewer-Country`, `CF-IPCountry`, …)
+2. Common IANA timezone mappings (e.g. `Asia/Kolkata` → `IN`) — useful because `api.salesbudge.com` reaches the ALB directly and does not receive CloudFront viewer headers
+3. Reverse geocode of SDK `latitude` / `longitude` when available
+
 
 Full authenticated merchant REST (JWT) is **not** documented here — that is private platform API.
