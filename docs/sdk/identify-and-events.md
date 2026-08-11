@@ -23,7 +23,7 @@ On `init()`, the SDK registers the browser device and sends:
 | `locale`, `languages` | `navigator.language` / `languages` |
 | `timezone` | `Intl` resolved time zone |
 | Country | Derived server-side from CDN/edge headers (e.g. CloudFront) |
-| `latitude` / `longitude` | Only if `init({ collectGeolocation: true })` (may prompt the user) |
+| `latitude` / `longitude` | Requested by default on `init()` via the browser permission prompt (`collectGeolocation` defaults to `true`). Set `init({ collectGeolocation: false })` to skip. Denial is ignored and init continues. |
 
 Each `track()` call auto-enriches properties (when space allows) with `locale`, `timezone`, `pageUrl`, and `referrer`. Callers may still pass up to **10** custom property fields; with context the payload may include up to **15**.
 
