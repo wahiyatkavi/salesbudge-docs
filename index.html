@@ -16,6 +16,12 @@
         subMaxLevel: 2,
         homepage: "docs/index.md",
         auto2top: true,
+        // Resolve markdown links relative to the current file (../api/…, sdk/…, etc.).
+        // Sidebar links must be root-absolute (/docs/…) so they work from nested pages.
+        relativePath: true,
+        alias: {
+          "/.*/_sidebar.md": "/_sidebar.md",
+        },
       };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
