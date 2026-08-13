@@ -4,6 +4,13 @@ Keep your product catalog in sync so events and leads can attach product context
 
 **Preferred:** batch sync via `/products/catalog` (or SDK `syncCatalog()`).
 
+## Who can write the catalog
+
+| Path | Allowed |
+|------|---------|
+| **External API** (`X-API-Key`) | **Integration** keys (not SDK-scoped keys) |
+| **CRM → Org → Products** | Owner, and **Marketing manager / team lead / head / director** (`ORG_MANAGE_PRODUCTS`). Individual marketers cannot manage products. |
+
 ## Upsert one product
 
 ```http

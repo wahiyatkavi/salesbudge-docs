@@ -5,7 +5,7 @@ External API errors return JSON:
 ```json
 {
   "timestamp": "2026-08-13T10:00:00.000Z",
-  "status": 422,
+  "status": 400,
   "code": "UNSUPPORTED_EVENT_NAME",
   "message": "…",
   "requestId": "uuid"
@@ -22,25 +22,30 @@ Always log `code` and `requestId` when debugging.
 |------|---------|-----|
 | `MISSING_IDEMPOTENCY_KEY` | Write without `Idempotency-Key` | Add header |
 | `MISSING_CUSTOMER_IDENTITY` | Customer upsert with no identity | Send email, phone, externalId, or anonymousCustomerId |
+| `UNSUPPORTED_EVENT_NAME` | Event name not in defaults/catalog | Use a platform default or add custom event in CRM |
+| `UNKNOWN_EVENT_FIELD` | Custom event property not allowlisted / no fields configured | Configure fields in Org → Event catalog |
+| `TOO_MANY_EVENT_FIELDS` | > 15 properties | Reduce payload |
 | `EMPTY_FILE` / `INVALID_CSV` | CRM bulk upload only | Fix CSV header/rows |
 
 ### 401 Unauthorized
 
 | Code | Meaning | Fix |
 |------|---------|-----|
-| (auth) | Invalid / missing / revoked API key | Create a new Integration key; check `X-API-Key` |
+| `AUTHENTICATION_REQUIRED` | Missing API key | Send `X-API-Key` |
+| `INVALID_API_KEY` | Invalid / revoked / expired key | Create a new Integration key |
 
 ### 403 Forbidden
 
 | Code | Meaning | Fix |
 |------|---------|-----|
-| `API_KEY_SCOPE_DENIED` | `SDK` key used on non-events route | Use an **Integration** key for full SDK / customers / devices / products |
+| `API_KEY_SCOPE_DENIED` | `SDK` key used on non-events route | Use an **Integration** key for customers / devices / products |
+| `FORBIDDEN` | CRM user missing a permission (e.g. products) | Need Owner or Marketing manager+ for catalog in CRM |
 
 ### 404 Not Found
 
 | Code | Meaning | Fix |
 |------|---------|-----|
-| `CUSTOMER_NOT_FOUND` | Unknown `customerId` | Upsert customer first or pass email/phone |
+| `CUSTOMER_NOT_FOUND` | Unknown `customerId` on event (or other lookup) | Use a known id, or send email/phone/externalId to upsert, or omit refs to create an anonymous visitor |
 | `API_KEY_NOT_FOUND` | CRM key ops | — |
 
 ### 409 Conflict
@@ -50,7 +55,7 @@ Always log `code` and `requestId` when debugging.
 | `IDENTITY_CONFLICT` | Identifiers map to different customers | Resolve duplicate identities |
 | `IDENTIFIER_ALREADY_ASSIGNED` | Email/phone owned elsewhere | Use the existing customer |
 | `EXTERNAL_ID_CONFLICT` | Different externalId already set | Don’t change externalId arbitrarily |
-| `EVENT_ID_ALREADY_EXISTS` | Same eventId, conflicting reuse | New unique `eventId` for new events |
+| `EVENT_ALREADY_INGESTED` | Same `eventId` already stored | New unique `eventId` for new events; retries must reuse the same id |
 | `IDEMPOTENCY_IN_PROGRESS` | Concurrent same key | Retry shortly |
 | `CUSTOMER_ALREADY_ANONYMIZED` | Anonymize twice | Stop |
 
@@ -58,11 +63,7 @@ Always log `code` and `requestId` when debugging.
 
 | Code | Meaning | Fix |
 |------|---------|-----|
-| `UNSUPPORTED_EVENT_NAME` | Name not in defaults/catalog | Use a platform default or add custom event in CRM |
-| `UNKNOWN_EVENT_FIELD` | Property not allowlisted for custom event | Update event catalog fields |
-| `TOO_MANY_EVENT_FIELDS` | > 15 properties | Reduce payload |
-| `MISSING_CUSTOMER_REFERENCE` | Event without customer ref | Pass customerId / email / phone / externalId |
-| `IDEMPOTENCY_KEY_REUSED` | Same key, different body | New key for new payload |
+| `IDEMPOTENCY_KEY_REUSED` | Same idempotency key, different body | New key for new payload |
 
 ### 429 Too Many Requests
 

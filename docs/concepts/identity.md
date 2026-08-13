@@ -15,11 +15,14 @@ When a visitor “becomes a lead”, SalesBudge does **not** create a duplicate 
 ## Lifecycle
 
 ```text
-Anonymous customer (SDK device register)
+Anonymous customer
+  • SDK device register, or
+  • Event ingest with no customerId / email / phone / externalId
         │
         │  browse events (PRODUCT_VIEWED, …)
         ▼
-Identify (email / phone / externalId)
+Identify or event with PII (email / phone / externalId)
+  → upserts that person (may merge anonymous session)
         │
         ▼
 Identified customer  ──► optional Sales lead (automation / PII rules)
@@ -27,6 +30,15 @@ Identified customer  ──► optional Sales lead (automation / PII rules)
         ▼
 Lead WON  ──► appears in Sales “Customers” (converted buyers)
 ```
+
+### Event ingest identity rules
+
+| Payload | Result |
+|---------|--------|
+| Known `customerId` | Attach event |
+| `email` / `phone` / `externalId` | Upsert visitor/customer, then attach |
+| No identity fields | Create anonymous visitor, then attach |
+| Unknown `customerId` | `404 CUSTOMER_NOT_FOUND` |
 
 ## CRM lists
 

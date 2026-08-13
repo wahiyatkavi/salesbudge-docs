@@ -69,7 +69,7 @@ curl -s -X PUT "https://api.salesbudge.com/api/v1/external/customers" \
 
 ## Sample response
 
-`201 Created` (new) or `200 OK` (updated):
+Always **`200 OK`**. Use the `created` flag to tell create vs update (keeps idempotent upserts simple — replays stay `200` too).
 
 ```json
 {
@@ -90,9 +90,6 @@ curl -s -X PUT "https://api.salesbudge.com/api/v1/external/customers" \
   ],
   "firstName": "Ada",
   "lastName": "Lovelace",
-  "countryCode": "IN",
-  "locale": "en-US",
-  "timezone": "Asia/Kolkata",
   "createdAt": "2026-08-13T10:00:00.000Z",
   "updatedAt": "2026-08-13T10:00:00.000Z",
   "created": true,
