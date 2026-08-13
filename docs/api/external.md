@@ -1,40 +1,76 @@
-# External API
+# External API overview
 
-Integrations that do not use the browser SDK call the **external** HTTP API with an API key:
+Base URL (production):
 
-- Base path: `/api/v1/external/…`
-- Auth: `X-API-Key` header (same keys as Org → API Keys)
-- Writes: `Idempotency-Key` header (required on customer, event, and product upserts)
+```text
+https://api.salesbudge.com/api/v1/external
+```
 
-Production: `https://api.salesbudge.com`  
-OpenAPI (when enabled on your environment): `/swagger-ui/index.html`
+All routes require `X-API-Key`. All **writes** require `Idempotency-Key`. See [Authentication](authentication.md) and [Idempotency](idempotency.md).
 
-## Core operations
+## Endpoints
 
-| Operation | Method | Notes |
-|-----------|--------|-------|
-| Upsert customer / PII | `PUT /customers` | Creates lead when automation rules allow |
-| Ingest event | `POST /events` | Platform defaults + merchant custom catalog names |
-| Register device | `POST /devices/register` | Anonymous session bootstrap |
-| Sync products | `PUT /products/catalog` | Preferred catalog setup |
+| Operation | Method | Path | Docs |
+|-----------|--------|------|------|
+| Health / auth check | `GET` | `/ping` | [Authentication](authentication.md) |
+| Upsert customer | `PUT` | `/customers` | [Customers](customers.md) |
+| Identify (alias) | `PUT` | `/customers/identify` | Same as `/customers` |
+| Ingest event | `POST` | `/events` | [Events](events.md) |
+| Register device | `POST` | `/devices/register` | [Devices](devices.md) |
+| Upsert product | `PUT` | `/products` | [Products](products.md) |
+| Sync catalog | `PUT` | `/products/catalog` | [Products](products.md) |
 
-### Event ingest
+## Common headers
 
-`eventName` must be a **platform default** (`NEW_CUSTOMER`, `PRODUCT_VIEWED`, `CATEGORY_VIEWED`, `INTERESTED`, `DEMO_REQUESTED`) or a **custom event** defined in Org → Event catalog.
+```http
+Content-Type: application/json
+X-API-Key: cp_live_…
+Idempotency-Key: unique-per-operation
+```
 
-Custom events validate `properties` keys against the catalog field list (max 15 keys). Unknown names return `422 UNSUPPORTED_EVENT_NAME`.
+## Minimal end-to-end (server)
 
-## Device register context
+```bash
+export SB_API_KEY="cp_live_YOUR_KEY"
+export BASE="https://api.salesbudge.com/api/v1/external"
 
-`POST /api/v1/external/devices/register` accepts optional browser context alongside `deviceKey` / `customerId`:
+# 1) Ping
+curl -s "$BASE/ping" -H "X-API-Key: $SB_API_KEY"
 
-`userAgent`, `locale`, `languages`, `timezone`, `platform`, `screenWidth`, `screenHeight`, `latitude`, `longitude`.
+# 2) Upsert customer
+curl -s -X PUT "$BASE/customers" \
+  -H "X-API-Key: $SB_API_KEY" \
+  -H "Idempotency-Key: identify-buyer@example.com" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"buyer@example.com","firstName":"Sam"}'
 
-Country is resolved in this order and stored on the device and customer:
+# 3) Ingest event (replace CUSTOMER_UUID)
+curl -s -X POST "$BASE/events" \
+  -H "X-API-Key: $SB_API_KEY" \
+  -H "Idempotency-Key: evt-demo-001" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventId": "evt-demo-001",
+    "eventName": "DEMO_REQUESTED",
+    "email": "buyer@example.com",
+    "properties": { "source": "api-docs" }
+  }'
+```
 
-1. Edge headers when present (`CloudFront-Viewer-Country`, `CF-IPCountry`, …)
-2. Common IANA timezone mappings (e.g. `Asia/Kolkata` → `IN`) — useful because `api.salesbudge.com` reaches the ALB directly and does not receive CloudFront viewer headers
-3. Reverse geocode of SDK `latitude` / `longitude` when available
+## Rate limits
 
+| Route | Limit | Error |
+|-------|-------|-------|
+| `POST /events` | 120 requests / minute / API key (or IP) | `429 RATE_LIMITED` |
 
-Full authenticated merchant REST (JWT) is **not** documented here — that is private platform API.
+## CORS
+
+Browser calls to `/api/v1/external/**` are CORS-enabled. Prefer the [browser SDK](../sdk/install.md) for websites so device identity and retries are handled for you.
+
+## What is not in this API
+
+Merchant CRM features (team, pipeline UI, JWT login, audit log UI) use authenticated dashboard APIs and are not part of the public integrator surface.
+
+## Related
+
+- [Customers](customers.md) · [Events](events.md) · [Devices](devices.md) · [Products](products.md) · [Errors](errors.md)
