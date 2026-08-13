@@ -1,33 +1,43 @@
-# Events
+# Events (concepts)
 
-Every meaningful business activity is captured as a standardized event (page view, product view, identify, demo request, etc.).
+Every meaningful activity is an **event**: product view, identify, demo request, custom actions, and more.
 
-- Events are immutable and ordered.
-- Operational CRM state (leads, customers, pipeline) is derived and kept separately for day-to-day work.
-- Merchants configure a **catalog** of allowed event names; ingest validates against platform defaults plus custom definitions.
+- Events are immutable and time-ordered.  
+- CRM objects (leads, pipeline) are **derived** from identity + events + automation rules.  
+- Ingest validates `eventName` against **platform defaults** + your **custom catalog**.
 
 ## Platform defaults
 
-| Event | Typical use |
-|-------|-------------|
-| `NEW_CUSTOMER` | After `identify()` |
-| `PRODUCT_VIEWED` | Product detail / catalog item |
-| `CATEGORY_VIEWED` | Category browse |
-| `INTERESTED` | Cart / strong interest |
-| `DEMO_REQUESTED` | Contact / demo form intent |
+| Event | Typical trigger | SDK helper |
+|-------|-----------------|------------|
+| `NEW_CUSTOMER` | After identify / new contact | `trackNewCustomer()` |
+| `PRODUCT_VIEWED` | Product page | `trackProductView()` |
+| `CATEGORY_VIEWED` | Category browse | `trackCategoryView(category)` |
+| `INTERESTED` | Strong interest / cart-like | `trackInterested()` |
+| `DEMO_REQUESTED` | Contact / demo form | `trackDemoRequested()` |
 
-## Custom events
+Names are case-insensitive on ingest; stored uppercase.
 
-In the CRM (**Org → Event catalog**), merchants with `ORG_MANAGE_EVENT_CATALOG` may define up to **10** custom events (names like `MY_EVENT`). Users with `ORG_VIEW_EVENT_CATALOG` can read the catalog but not edit it.
+## Property rules
 
-Custom events may declare an allowlist of property field names. Ingest rejects unknown fields and caps payloads at **15** properties (including SDK context enrichment).
+| Rule | Limit |
+|------|-------|
+| Max properties per event | **15** |
+| SDK caller-provided properties | **10** (SDK may add locale/page context) |
+| Custom event properties | Must be allowlisted in Event catalog |
 
-## Marketing funnel
+## Marketing funnel (CRM)
 
-The CRM funnel chart uses fixed MVP stages:
+Fixed MVP stages:
 
-**Landing** → **Product** → **Interested** → **Demo** → **Won**
+**Landing → Product → Interested → Demo → Won**
 
-Custom event volume is reported separately via the marketing custom-events API (not mixed into the five funnel stages).
+Custom event volume is reported separately (not mixed into those five stages).
 
-Use the [SDK](../sdk/install.md) on websites or the [external API](../api/external.md) from servers.
+## How to send events
+
+| Path | Docs |
+|------|------|
+| Browser | [SDK identify & events](../sdk/identify-and-events.md) |
+| HTTP | [Events API](../api/events.md) |
+| Custom names | [Custom events](custom-events.md) |
