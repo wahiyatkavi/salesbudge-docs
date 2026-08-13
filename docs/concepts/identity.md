@@ -38,7 +38,8 @@ Lead WON  ──► appears in Sales “Customers” (converted buyers)
 | Known `customerId` | Attach event |
 | `email` / `phone` / `externalId` | Upsert visitor/customer, then attach |
 | No identity fields | Create anonymous visitor, then attach |
-| Unknown `customerId` | `404 CUSTOMER_NOT_FOUND` |
+| Unknown `customerId` without PII | Create anonymous visitor, then attach |
+| Unknown `customerId` with PII | Upsert from email/phone/externalId, then attach |
 
 ## CRM lists
 

@@ -28,7 +28,7 @@ POST https://api.salesbudge.com/api/v1/external/events
 |-------|----------|------------|-------------------------|
 | `eventId` | **Yes** | 200 | Unique per merchant; retries must reuse the same id |
 | `eventName` | **Yes** | 200 | See [accepted names](#accepted-eventname-values) |
-| `customerId` | Optional | UUID | If present and known → attach event. Unknown id → `404 CUSTOMER_NOT_FOUND` |
+| `customerId` | Optional | UUID | If known → attach. If unknown and no PII → invent anonymous visitor |
 | `email` | Optional | 320 | Upserts (creates/updates) that person, then attaches the event |
 | `phone` | Optional | 50 | Upserts person, then attaches the event |
 | `externalId` | Optional | 200 | Upserts person by your external id, then attaches the event |
@@ -45,8 +45,8 @@ POST https://api.salesbudge.com/api/v1/external/events
 | You send | What happens |
 |----------|--------------|
 | Known `customerId` | Attach event to that customer |
-| `email` / `phone` / `externalId` (no `customerId`) | **Upsert** that identity, then attach event |
-| None of the above | **Create an anonymous visitor**, then attach event |
+| `email` / `phone` / `externalId` | **Upsert** that identity, then attach event (also used when `customerId` is unknown) |
+| No PII and missing or unknown `customerId` | **Create an anonymous visitor**, then attach event |
 
 PII on the event (`email` / `phone`) can also trigger lead automation the same way identify does.
 
@@ -165,7 +165,6 @@ curl -s -X POST "https://api.salesbudge.com/api/v1/external/events" \
 | `UNKNOWN_EVENT_FIELD` | 400 | Custom event property not allowlisted (or no fields configured yet) |
 | `TOO_MANY_EVENT_FIELDS` | 400 | More than 15 properties |
 | `EVENT_ALREADY_INGESTED` | 409 | Same `eventId` already stored for this merchant |
-| `CUSTOMER_NOT_FOUND` | 404 | `customerId` provided but unknown |
 | `RATE_LIMITED` | 429 | Over 120/min |
 | `MISSING_IDEMPOTENCY_KEY` | 400 | Header missing |
 | `IDEMPOTENCY_KEY_REUSED` | 422 | Same idempotency key, different body |
