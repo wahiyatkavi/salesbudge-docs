@@ -45,7 +45,7 @@ Always log `code` and `requestId` when debugging.
 
 | Code | Meaning | Fix |
 |------|---------|-----|
-| `CUSTOMER_NOT_FOUND` | Unknown `customerId` on event (or other lookup) | Use a known id, or send email/phone/externalId to upsert, or omit refs to create an anonymous visitor |
+| `CUSTOMER_NOT_FOUND` | Customer id missing on CRM/detail lookups | Use a known id from identify / prior ingest response |
 | `API_KEY_NOT_FOUND` | CRM key ops | — |
 
 ### 409 Conflict
