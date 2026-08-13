@@ -22,8 +22,8 @@ Idempotency-Key: your-stable-unique-string
 | Operation | Suggested key pattern |
 |-----------|------------------------|
 | Identify / upsert customer | `identify-{email}` or `cust-{externalId}` |
-| Event | Same as `eventId` (SDK does this) |
-| Device register | `device-{deviceKey}` |
+| Event | Same as `eventId` (convenient; SDK uses a separate stable key pair) |
+| Device register | `device-{deviceKey}` (SDK may add suffixes such as `-anonymous`) |
 | Catalog sync | `catalog-{version}` e.g. `catalog-2026-08-13` |
 
 Keys should be unique **per logical operation**. Reusing a key for a different payload fails.
@@ -42,7 +42,7 @@ curl -s -X PUT "https://api.salesbudge.com/api/v1/external/customers" \
   }'
 ```
 
-First call → `201` or `200` with `"replayed": false`.  
+First call → `200` with `"created": true` (or `"created": false` if matched).  
 Identical retry → `200` with `"replayed": true` (same customer id).
 
 ## SDK behavior

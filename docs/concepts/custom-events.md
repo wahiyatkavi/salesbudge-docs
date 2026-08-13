@@ -16,7 +16,9 @@ Define merchant-specific event names beyond the five platform defaults.
 
 1. Open **Organization → Event catalog**.  
 2. Permission needed to edit: `ORG_MANAGE_EVENT_CATALOG` (view: `ORG_VIEW_EVENT_CATALOG`).  
-3. Create an event name and optional allowed property field names.  
+3. Create an event name and the **allowed property field names** you will send.  
+
+Configure property fields in CRM **before** clients send those keys. An empty field list means the event may be ingested **without** properties; any property in the payload returns `400 UNKNOWN_EVENT_FIELD`.
 
 ## Send from SDK
 
@@ -43,11 +45,11 @@ curl -s -X POST "https://api.salesbudge.com/api/v1/external/events" \
 
 ## Common errors
 
-| Code | Cause |
-|------|-------|
-| `UNSUPPORTED_EVENT_NAME` | Name not created in catalog (and not a platform default) |
-| `UNKNOWN_EVENT_FIELD` | Property key not in the event’s allowlist |
-| `TOO_MANY_EVENT_FIELDS` | More than 15 properties |
+| Code | HTTP | Cause |
+|------|------|-------|
+| `UNSUPPORTED_EVENT_NAME` | 400 | Name not created in catalog (and not a platform default) |
+| `UNKNOWN_EVENT_FIELD` | 400 | Property key not in the event’s allowlist, or no fields configured yet |
+| `TOO_MANY_EVENT_FIELDS` | 400 | More than 15 properties |
 
 ## Related
 

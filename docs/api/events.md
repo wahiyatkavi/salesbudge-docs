@@ -13,8 +13,10 @@ POST https://api.salesbudge.com/api/v1/external/events
 | Header | Required |
 |--------|----------|
 | `X-API-Key` | Yes (`INTEGRATION` or `SDK`) |
-| `Idempotency-Key` | Yes (use the same value as `eventId`) |
+| `Idempotency-Key` | Yes (unique per logical write; retries must reuse the same key + body) |
 | `Content-Type` | `application/json` |
+
+> Tip: many clients set `Idempotency-Key` equal to `eventId`. That is a convenient pattern, not a hard requirement — both values must stay stable across retries.
 
 ## Rate limit
 
@@ -26,10 +28,10 @@ POST https://api.salesbudge.com/api/v1/external/events
 |-------|----------|------------|-------------------------|
 | `eventId` | **Yes** | 200 | Unique per merchant; retries must reuse the same id |
 | `eventName` | **Yes** | 200 | See [accepted names](#accepted-eventname-values) |
-| `customerId` | One of ref\* | UUID | Preferred when known |
-| `email` | ↑ | 320 | Resolves / creates customer |
-| `phone` | ↑ | 50 | Resolves / creates customer |
-| `externalId` | ↑ | 200 | Your customer external id |
+| `customerId` | Optional | UUID | If present and known → attach event. Unknown id → `404 CUSTOMER_NOT_FOUND` |
+| `email` | Optional | 320 | Upserts (creates/updates) that person, then attaches the event |
+| `phone` | Optional | 50 | Upserts person, then attaches the event |
+| `externalId` | Optional | 200 | Upserts person by your external id, then attaches the event |
 | `productId` | No | UUID | Catalog product UUID |
 | `productVariantId` | No | UUID | Optional variant |
 | `quantity` | No | integer | Commerce |
@@ -38,7 +40,15 @@ POST https://api.salesbudge.com/api/v1/external/events
 | `properties` | No | **≤ 15 keys** | String keys; values JSON-serializable |
 | `occurredAt` | No | ISO-8601 | Defaults to ingest time |
 
-\*At least one of: `customerId`, `email`, `phone`, `externalId`.
+### How the customer is resolved
+
+| You send | What happens |
+|----------|--------------|
+| Known `customerId` | Attach event to that customer |
+| `email` / `phone` / `externalId` (no `customerId`) | **Upsert** that identity, then attach event |
+| None of the above | **Create an anonymous visitor**, then attach event |
+
+PII on the event (`email` / `phone`) can also trigger lead automation the same way identify does.
 
 ## Accepted `eventName` values
 
@@ -58,14 +68,16 @@ Names are case-insensitive on ingest and stored uppercase.
 
 - Defined in CRM → **Org → Event catalog** (max **10** per merchant)  
 - Name pattern: `^[A-Z][A-Z0-9_]{0,62}$` (e.g. `NEWSLETTER_SIGNUP`)  
-- Properties must match the catalog allowlist → otherwise `422 UNKNOWN_EVENT_FIELD`  
-- Unknown name → `422 UNSUPPORTED_EVENT_NAME`  
+- Property keys must be configured on that event in CRM **before** you send them  
+- Empty property list in CRM → you may send the event **with no properties**; sending any property returns `400 UNKNOWN_EVENT_FIELD`  
+- Unknown property key → `400 UNKNOWN_EVENT_FIELD`  
+- Unknown name → `400 UNSUPPORTED_EVENT_NAME`  
 
 See [Custom events](../concepts/custom-events.md).
 
 ## Product without a synced catalog
 
-Pass soft references in `properties`:
+Pass soft references in `properties` (platform default events only — custom events still need CRM allowlisted keys):
 
 ```json
 "properties": {
@@ -149,14 +161,14 @@ curl -s -X POST "https://api.salesbudge.com/api/v1/external/events" \
 
 | Code | HTTP | When |
 |------|------|------|
-| `MISSING_CUSTOMER_REFERENCE` | 422 | No customerId/email/phone/externalId |
-| `UNSUPPORTED_EVENT_NAME` | 422 | Name not in defaults or catalog |
-| `UNKNOWN_EVENT_FIELD` | 422 | Custom event property not allowlisted |
-| `TOO_MANY_EVENT_FIELDS` | 422 | More than 15 properties |
-| `EVENT_ID_ALREADY_EXISTS` | 409 | Different payload reused `eventId` incorrectly |
-| `CUSTOMER_NOT_FOUND` | 404 | `customerId` unknown |
+| `UNSUPPORTED_EVENT_NAME` | 400 | Name not in defaults or catalog |
+| `UNKNOWN_EVENT_FIELD` | 400 | Custom event property not allowlisted (or no fields configured yet) |
+| `TOO_MANY_EVENT_FIELDS` | 400 | More than 15 properties |
+| `EVENT_ALREADY_INGESTED` | 409 | Same `eventId` already stored for this merchant |
+| `CUSTOMER_NOT_FOUND` | 404 | `customerId` provided but unknown |
 | `RATE_LIMITED` | 429 | Over 120/min |
 | `MISSING_IDEMPOTENCY_KEY` | 400 | Header missing |
+| `IDEMPOTENCY_KEY_REUSED` | 422 | Same idempotency key, different body |
 
 ## Related
 
